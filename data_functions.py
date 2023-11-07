@@ -9,7 +9,7 @@ class_mapping = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 np.random.seed(2024)
 
 
-def load_data(prefix):
+def load_data(prefix=LOC):
     return (np.load(f'{prefix}/X_train.npy'), np.load(f'{prefix}/y_train.npy'), np.load(f'{prefix}/X_val.npy'),
             np.load(f'{prefix}/y_val.npy'), np.load(f'{prefix}/X_test.npy'))
 
@@ -26,7 +26,7 @@ def transform_labels(y):
     return y
 
 
-def get_loaders_and_weights(batch_size):
+def get_loaders_weights_and_occurrences(batch_size):
     X_train, y_train, X_val, y_val, X_test = load_data(LOC)
     mean = X_train.mean()
     std = X_train.std()
@@ -36,6 +36,9 @@ def get_loaders_and_weights(batch_size):
     val_imgs = transform_imgs(X_val, mean, std)
     val_labels = transform_labels(y_val)
     weights = -torch.Tensor(np.array(np.unique(train_labels, return_counts=True))[1]/len(train_labels))
+    occurrences = {class_mapping[id]: count for id, count in
+                   [tuple(item) for item in
+                    list(np.array(np.unique(train_labels, return_counts=True)).T)]}
 
     train_data = TensorDataset(train_imgs, train_labels)
     val_data = TensorDataset(val_imgs,val_labels)
@@ -43,4 +46,4 @@ def get_loaders_and_weights(batch_size):
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False)
     val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
 
-    return train_loader, val_loader, weights
+    return train_loader, val_loader, weights, occurrences
